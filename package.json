@@ -16,12 +16,11 @@
   "dependencies": {
     "algoliasearch": "^4.2.0",
     "axios": "^0.19.2",
-    "lodash": "^4.17.15",
-    "mongodb": "^3.5.7"
+    "lodash": "^4.17.15"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.150",
-    "@types/mongodb": "^3.5.16",
+    "@types/node": "^13.13.5",
     "@typescript-eslint/eslint-plugin": "^2.32.0",
     "@typescript-eslint/parser": "^2.32.0",
     "env-cmd": "^10.1.0",

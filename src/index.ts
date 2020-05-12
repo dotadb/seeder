@@ -1,8 +1,7 @@
-const { ALGOLIA_APP_ID, ALGOLIA_APP_KEY, MONGO_URI } = process.env
+const { ALGOLIA_APP_ID, ALGOLIA_APP_KEY } = process.env
 
 import algoliasearch from 'algoliasearch'
 import axios from 'axios'
-import mongodb from 'mongodb'
 
 import {
   abilityAffects,
@@ -16,13 +15,6 @@ import {
 import { Ability, DotaAbility, DotaHero, DotaItem, Hero, Item } from './types'
 
 const main = async (): Promise<void> => {
-  const connection = await mongodb.connect(MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
-
-  const db = connection.db()
-
   const algolia = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_APP_KEY)
 
   const {
@@ -77,31 +69,12 @@ const main = async (): Promise<void> => {
     })
   )
 
-  await Promise.all(
-    items.map((item) =>
-      db.collection('items').findOneAndUpdate(
-        {
-          slug: item.slug
-        },
-        {
-          $set: item
-        },
-        {
-          upsert: true
-        }
-      )
-    )
-  )
-
   const itemsIndex = algolia.initIndex('items')
 
   await itemsIndex.saveObjects(
-    items.map(({ image, lore, name, slug }) => ({
-      image,
-      lore,
-      name,
-      objectID: slug,
-      slug
+    items.map((item) => ({
+      ...item,
+      objectID: item.slug
     }))
   )
 
@@ -142,37 +115,6 @@ const main = async (): Promise<void> => {
     })
   )
 
-  await Promise.all(
-    heroes.map((hero) =>
-      db.collection('heroes').findOneAndUpdate(
-        {
-          slug: hero.slug
-        },
-        {
-          $set: hero
-        },
-        {
-          upsert: true
-        }
-      )
-    )
-  )
-
-  const heroesIndex = algolia.initIndex('heroes')
-
-  await heroesIndex.saveObjects(
-    heroes.map(({ hype, image, name, roles, slug }) => ({
-      hype,
-      image,
-      name,
-      objectID: slug,
-      roles,
-      slug
-    }))
-  )
-
-  console.log('heroes saved')
-
   const abilities: Ability[] = Object.entries(abilitydata).map(
     ([
       slug,
@@ -198,47 +140,23 @@ const main = async (): Promise<void> => {
       .map((ability) => ability.slug)
   })
 
-  await Promise.all(
-    heroes.map((hero) =>
-      db.collection('heroes').findOneAndUpdate(
-        {
-          slug: hero.slug
-        },
-        {
-          $set: hero
-        },
-        {
-          upsert: true
-        }
-      )
-    )
+  const heroesIndex = algolia.initIndex('heroes')
+
+  await heroesIndex.saveObjects(
+    heroes.map((hero) => ({
+      ...hero,
+      objectID: hero.slug
+    }))
   )
 
-  await Promise.all(
-    abilities.map((ability) =>
-      db.collection('abilities').findOneAndUpdate(
-        {
-          slug: ability.slug
-        },
-        {
-          $set: ability
-        },
-        {
-          upsert: true
-        }
-      )
-    )
-  )
+  console.log('heroes saved')
 
   const abilitiesIndex = algolia.initIndex('abilities')
 
   await abilitiesIndex.saveObjects(
-    abilities.map(({ image, lore, name, slug }) => ({
-      image,
-      lore,
-      name,
-      objectID: slug,
-      slug
+    abilities.map((ability) => ({
+      ...ability,
+      objectID: ability.slug
     }))
   )
 
