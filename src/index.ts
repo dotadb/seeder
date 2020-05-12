@@ -156,6 +156,7 @@ const main = async (): Promise<void> => {
   await abilitiesIndex.saveObjects(
     abilities.map((ability) => ({
       ...ability,
+      hasImage: !!ability.image,
       objectID: ability.slug
     }))
   )
