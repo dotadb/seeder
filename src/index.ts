@@ -55,7 +55,7 @@ const main = async (): Promise<void> => {
       lang: { Tokens }
     }
   } = await axios.get(
-    'https://raw.githubusercontent.com/dotabuff/d2vpkr/master/dota/resource/localization/abilities_english.json'
+    'https://raw.githubusercontent.com/dotabuff/d2vpkr/master/dota/resource/dota_english.json'
   )
 
   const algolia = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_APP_KEY)
@@ -135,6 +135,7 @@ const main = async (): Promise<void> => {
             gain: hero.str_gain
           }
         },
+        hype: Tokens[`npc_dota_hero_${slug}_hype`],
         icon,
         image,
         lore: compact(dota.hero_lore[slug].split('\n')),

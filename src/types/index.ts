@@ -38,6 +38,7 @@ export type Hero = {
       gain: number
     }
   }
+  hype: string
   icon?: string
   image?: string
   lore: string[]
