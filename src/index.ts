@@ -3,7 +3,13 @@ const { ALGOLIA_APP_ID, ALGOLIA_APP_KEY } = process.env
 import algoliasearch from 'algoliasearch'
 import axios from 'axios'
 import dota from 'dotaconstants'
-import { createWriteStream, ensureFile, ReadStream, unlink } from 'fs-extra'
+import {
+  createWriteStream,
+  ensureFile,
+  pathExists,
+  ReadStream,
+  unlink
+} from 'fs-extra'
 import { compact, trim } from 'lodash'
 import { resolve } from 'path'
 
@@ -11,6 +17,10 @@ import { Ability, Hero, Image, Item } from './types'
 
 const fetchImage = async (image: Image): Promise<string | undefined> => {
   const path = resolve(__dirname, '..', 'assets', image.path.slice(5))
+
+  if (await pathExists(path)) {
+    return path
+  }
 
   await ensureFile(path)
 
