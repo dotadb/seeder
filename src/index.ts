@@ -50,6 +50,14 @@ const fetchImage = async (image: Image): Promise<string | undefined> => {
 }
 
 const main = async (): Promise<void> => {
+  const {
+    data: {
+      lang: { Tokens }
+    }
+  } = await axios.get(
+    'https://raw.githubusercontent.com/dotabuff/d2vpkr/master/dota/resource/localization/abilities_english.json'
+  )
+
   const algolia = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_APP_KEY)
 
   const abilities: Ability[] = await Promise.all(
@@ -76,6 +84,7 @@ const main = async (): Promise<void> => {
         damageType: ability.dmg_type,
         description: ability.desc,
         image,
+        lore: Tokens[`DOTA_Tooltip_ability_${slug}_Lore`],
         manacost: ability.mc,
         name: ability.dname,
         piercesThroughBkb: ability.bkbpierce === 'Yes',
@@ -128,6 +137,7 @@ const main = async (): Promise<void> => {
         },
         icon,
         image,
+        lore: dota.hero_lore[slug],
         name: hero.localized_name,
         roles: hero.roles,
         slug,

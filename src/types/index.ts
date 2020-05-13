@@ -14,6 +14,7 @@ export type Ability = {
   damageType?: string
   description?: string
   image?: string
+  lore?: string
   manacost?: string | string[]
   name: string
   piercesThroughBkb?: boolean
@@ -39,6 +40,7 @@ export type Hero = {
   }
   icon?: string
   image?: string
+  lore: string
   name: string
   roles: string[]
   slug: string

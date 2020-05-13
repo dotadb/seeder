@@ -1,7 +1,8 @@
 declare module 'dotaconstants' {
   export const abilities: Record<string, Ability>
-  export const heroes: Record<string, Hero>
   export const hero_abilities: Record<string, HeroAbilities>
+  export const hero_lore: Record<string, string>
+  export const heroes: Record<string, Hero>
   export const items: Record<string, Item>
 }
 
@@ -19,6 +20,14 @@ type Ability = {
   mc?: string | string[]
   cd?: string | string[]
   img?: string
+}
+
+type HeroAbilities = {
+  abilities: string[]
+  talents: {
+    name: string
+    level: number
+  }[]
 }
 
 type Hero = {
@@ -51,14 +60,6 @@ type Hero = {
   turn_rate: number
   cm_enabled: boolean
   legs: number
-}
-
-type HeroAbilities = {
-  abilities: string[]
-  talents: {
-    name: string
-    level: number
-  }[]
 }
 
 type Item = {
