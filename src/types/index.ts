@@ -97,4 +97,5 @@ export type Item = {
   notes: string
   quality?: string
   slug: string
+  tier?: number
 }

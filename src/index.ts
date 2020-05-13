@@ -174,7 +174,8 @@ const main = async (): Promise<void> => {
           name: item.dname,
           notes: item.notes,
           quality: item.qual,
-          slug
+          slug,
+          tier: item.tier
         }
       })
     )

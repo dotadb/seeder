@@ -81,4 +81,5 @@ type Item = {
   components: null | string[]
   created: boolean
   charges: number | false
+  tier?: number
 }
