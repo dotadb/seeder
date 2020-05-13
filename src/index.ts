@@ -120,7 +120,7 @@ const main = async (): Promise<void> => {
             .filter((name) => name !== 'generic_hidden')
             .includes(slug)
         ),
-        attribubtes: {
+        attributes: {
           agi: {
             base: hero.base_agi,
             gain: hero.agi_gain
@@ -137,14 +137,14 @@ const main = async (): Promise<void> => {
         },
         icon,
         image,
-        lore: dota.hero_lore[slug],
+        lore: compact(dota.hero_lore[slug].split('\n')),
         name: hero.localized_name,
         roles: hero.roles,
         slug,
         stats: {
           armor: {
             base: hero.base_armor,
-            magicResistence: hero.base_mr
+            magicResistance: hero.base_mr
           },
           attack: {
             max: hero.base_attack_max,

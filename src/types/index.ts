@@ -23,7 +23,7 @@ export type Ability = {
 
 export type Hero = {
   abilities: Ability[]
-  attribubtes: {
+  attributes: {
     agi: {
       base: number
       gain: number
@@ -40,14 +40,14 @@ export type Hero = {
   }
   icon?: string
   image?: string
-  lore: string
+  lore: string[]
   name: string
   roles: string[]
   slug: string
   stats: {
     armor: {
       base: number
-      magicResistence: number
+      magicResistance: number
     }
     attack: {
       max: number
