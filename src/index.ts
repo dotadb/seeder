@@ -19,7 +19,7 @@ const fetchImage = async (image: Image): Promise<string | undefined> => {
   const path = resolve(__dirname, '..', 'assets', image.path.slice(5))
 
   if (await pathExists(path)) {
-    return path
+    return image.path
   }
 
   await ensureFile(path)
@@ -37,7 +37,7 @@ const fetchImage = async (image: Image): Promise<string | undefined> => {
     response.data.pipe(stream)
 
     return new Promise((resolve, reject) => {
-      stream.on('finish', resolve)
+      stream.on('finish', () => resolve(image.path))
       stream.on('error', async () => {
         await unlink(path)
 
