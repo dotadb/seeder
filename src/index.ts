@@ -3,51 +3,10 @@ const { ALGOLIA_APP_ID, ALGOLIA_APP_KEY } = process.env
 import algoliasearch from 'algoliasearch'
 import axios from 'axios'
 import dota from 'dotaconstants'
-import {
-  createWriteStream,
-  ensureFile,
-  pathExists,
-  ReadStream,
-  unlink
-} from 'fs-extra'
 import { compact, trim } from 'lodash'
-import { resolve } from 'path'
 
-import { Ability, Hero, Image, Item } from './types'
-
-const fetchImage = async (image: Image): Promise<string | undefined> => {
-  const path = resolve(__dirname, '..', 'assets', image.path.slice(5))
-
-  if (await pathExists(path)) {
-    return image.path
-  }
-
-  await ensureFile(path)
-
-  const stream = createWriteStream(path)
-
-  try {
-    const response = await axios.get<ReadStream>(
-      image.url.replace('_md', '_lg'),
-      {
-        responseType: 'stream'
-      }
-    )
-
-    response.data.pipe(stream)
-
-    return new Promise((resolve, reject) => {
-      stream.on('finish', () => resolve(image.path))
-      stream.on('error', async () => {
-        await unlink(path)
-
-        reject()
-      })
-    })
-  } catch (error) {
-    await unlink(path)
-  }
-}
+import { fetchImage, getHeroForAbility } from './lib'
+import { Ability, Hero, Item } from './types'
 
 const main = async (): Promise<void> => {
   const {
@@ -221,16 +180,17 @@ const main = async (): Promise<void> => {
     )
   )
 
-  const itemsIndex = algolia.initIndex('items')
+  const abilitiesIndex = algolia.initIndex('abilities')
 
-  await itemsIndex.saveObjects(
-    items.map((item) => ({
-      ...item,
-      objectID: item.slug
+  await abilitiesIndex.saveObjects(
+    abilities.map((ability) => ({
+      ...ability,
+      hero: getHeroForAbility(heroes, ability),
+      objectID: ability.slug
     }))
   )
 
-  console.log('items saved')
+  console.log('abilities saved')
 
   const heroesIndex = algolia.initIndex('heroes')
 
@@ -243,16 +203,16 @@ const main = async (): Promise<void> => {
 
   console.log('heroes saved')
 
-  const abilitiesIndex = algolia.initIndex('abilities')
+  const itemsIndex = algolia.initIndex('items')
 
-  await abilitiesIndex.saveObjects(
-    abilities.map((ability) => ({
-      ...ability,
-      objectID: ability.slug
+  await itemsIndex.saveObjects(
+    items.map((item) => ({
+      ...item,
+      objectID: item.slug
     }))
   )
 
-  console.log('abilities saved')
+  console.log('items saved')
 
   console.log('done')
 
