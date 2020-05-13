@@ -49,7 +49,7 @@ export const getHeroForAbility = (
   ability: Ability
 ): string | undefined => {
   const hero = heroes.find(({ abilities }) =>
-    abilities.find(({ slug }) => slug === ability.slug)
+    abilities.find(({ lore, slug }) => lore && slug === ability.slug)
   )
 
   return hero?.slug
