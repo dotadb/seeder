@@ -12,6 +12,7 @@
     "prettier"
   ],
   "rules": {
+    "@typescript-eslint/camelcase": "off",
     "prettier/prettier": "error",
     "simple-import-sort/sort": "error",
     "sort-destructure-keys/sort-destructure-keys": "error",

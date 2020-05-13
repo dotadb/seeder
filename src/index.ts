@@ -2,71 +2,202 @@ const { ALGOLIA_APP_ID, ALGOLIA_APP_KEY } = process.env
 
 import algoliasearch from 'algoliasearch'
 import axios from 'axios'
+import dota from 'dotaconstants'
+import { createWriteStream, ensureFile, ReadStream, unlink } from 'fs-extra'
+import { compact, trim } from 'lodash'
+import { resolve } from 'path'
 
-import {
-  abilityAffects,
-  abilityCooldownAndManaCost,
-  attribute,
-  cleanHtml,
-  itemAttributes,
-  itemComponents,
-  itemManaCost
-} from './lib'
-import { Ability, DotaAbility, DotaHero, DotaItem, Hero, Item } from './types'
+import { Ability, Hero, Image, Item } from './types'
+
+const fetchImage = async (image: Image): Promise<string | undefined> => {
+  const path = resolve(__dirname, '..', 'assets', image.path.slice(5))
+
+  await ensureFile(path)
+
+  const stream = createWriteStream(path)
+
+  try {
+    const response = await axios.get<ReadStream>(
+      image.url.replace('_md', '_lg'),
+      {
+        responseType: 'stream'
+      }
+    )
+
+    response.data.pipe(stream)
+
+    return new Promise((resolve, reject) => {
+      stream.on('finish', resolve)
+      stream.on('error', async () => {
+        await unlink(path)
+
+        reject()
+      })
+    })
+  } catch (error) {
+    await unlink(path)
+  }
+}
 
 const main = async (): Promise<void> => {
   const algolia = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_APP_KEY)
 
-  const {
-    data: {
-      lang: { Tokens }
-    }
-  } = await axios.get(
-    'https://raw.githubusercontent.com/dotabuff/d2vpkr/master/dota/resource/dota_english.json'
-  )
+  const abilities: Ability[] = await Promise.all(
+    Object.entries(dota.abilities).map(async ([slug, ability]) => {
+      let image
 
-  const {
-    data: { abilitydata, herodata, itemdata }
-  } = await axios.get<{
-    abilitydata: Record<string, DotaAbility>
-    itemdata: Record<string, DotaItem>
-    herodata: Record<string, DotaHero>
-  }>(
-    'https://www.dota2.com/jsfeed/heropediadata?feeds=itemdata,abilitydata,herodata'
-  )
-
-  const items: Item[] = Object.entries(itemdata).map(
-    ([
-      slug,
-      {
-        attrib,
-        cd,
-        components,
-        cost,
-        created,
-        desc,
-        dname,
-        img,
-        lore,
-        mc,
-        notes,
-        qual
+      if (ability.img) {
+        image = await fetchImage({
+          path: `/img/abilities/${slug}.png`,
+          url: `https://api.opendota.com${ability.img.split('?')[0]}`
+        })
       }
-    ]) => ({
-      attributes: itemAttributes(attrib),
-      components: itemComponents(components),
-      cooldown: cd,
-      cost,
-      crafted: created,
-      description: cleanHtml(desc),
-      image: img.split('?')[0],
-      lore: cleanHtml(lore),
-      manacost: itemManaCost(mc),
-      name: cleanHtml(dname),
-      notes: cleanHtml(notes),
-      quality: qual || null,
-      slug
+
+      return {
+        attributes: ability.attrib?.map(({ header, value }) => ({
+          label: trim(header, ' :'),
+          value
+        })),
+        behavior: Array.isArray(ability.behavior)
+          ? compact(ability.behavior)
+          : ability.behavior,
+        cooldown: ability.cd,
+        damage: ability.dmg,
+        damageType: ability.dmg_type,
+        description: ability.desc,
+        image,
+        manacost: ability.mc,
+        name: ability.dname,
+        piercesThroughBkb: ability.bkbpierce === 'Yes',
+        slug
+      }
     })
+  )
+
+  const heroes: Hero[] = await Promise.all(
+    Object.values(dota.heroes).map(async (hero) => {
+      const slug = hero.name.slice(14)
+
+      const image = await fetchImage({
+        path: `/img/heroes/${slug}.png`,
+        url: `https://api.opendota.com${hero.img.split('?')[0]}`
+      })
+      const icon = await fetchImage({
+        path: `/img/heroes/icons/${slug}.png`,
+        url: `https://api.opendota.com${hero.icon.split('?')[0]}`
+      })
+
+      const heroAbilities = Object.entries(dota.hero_abilities).find(
+        ([key]) => key === hero.name
+      )?.[1]
+
+      if (!heroAbilities) {
+        throw new Error('Abilities not found')
+      }
+
+      return {
+        abilities: abilities.filter(({ slug }) =>
+          heroAbilities.abilities
+            .filter((name) => name !== 'generic_hidden')
+            .includes(slug)
+        ),
+        attribubtes: {
+          agi: {
+            base: hero.base_agi,
+            gain: hero.agi_gain
+          },
+          int: {
+            base: hero.base_int,
+            gain: hero.int_gain
+          },
+          primary: hero.primary_attr,
+          str: {
+            base: hero.base_str,
+            gain: hero.str_gain
+          }
+        },
+        icon,
+        image,
+        name: hero.localized_name,
+        roles: hero.roles,
+        slug,
+        stats: {
+          armor: {
+            base: hero.base_armor,
+            magicResistence: hero.base_mr
+          },
+          attack: {
+            max: hero.base_attack_max,
+            min: hero.base_attack_min,
+            projectileSpeed: hero.projectile_speed,
+            range: hero.attack_range,
+            rate: hero.attack_rate,
+            type: hero.attack_type.toLowerCase()
+          },
+          health: {
+            base: hero.base_health,
+            regen: hero.base_health_regen
+          },
+          mana: {
+            base: hero.base_mana,
+            regen: hero.base_mana_regen
+          },
+          movement: {
+            legs: hero.legs,
+            speed: hero.move_speed,
+            turnRate: hero.turn_rate
+          }
+        },
+        talents: heroAbilities.talents.map(({ level, name }) => {
+          const ability = abilities.find(({ slug }) => slug === name)
+
+          if (!ability) {
+            throw new Error('Talent not found')
+          }
+
+          return {
+            level,
+            name: ability.name
+          }
+        })
+      }
+    })
+  )
+
+  const items: Item[] = compact(
+    await Promise.all(
+      Object.entries(dota.items).map(async ([slug, item]) => {
+        const image = await fetchImage({
+          path: `/img/items/${slug}.png`,
+          url: `https://api.opendota.com${item.img.split('?')[0]}`
+        })
+
+        if (!item.dname) {
+          return null
+        }
+
+        return {
+          attributes: item.attrib.map(({ footer, header, value }) => ({
+            header: trim(header, ' :'),
+            label: footer,
+            value
+          })),
+          charges: item.charges,
+          components: item.components,
+          cooldown: item.cd,
+          cost: item.cost,
+          created: item.created,
+          hint: item.hint,
+          image,
+          lore: item.lore,
+          manacost: item.mc,
+          name: item.dname,
+          notes: item.notes,
+          quality: item.qual,
+          slug
+        }
+      })
+    )
   )
 
   const itemsIndex = algolia.initIndex('items')
@@ -79,66 +210,6 @@ const main = async (): Promise<void> => {
   )
 
   console.log('items saved')
-
-  const heroes: Hero[] = Object.entries(herodata).map(
-    ([slug, { attribs, dac, dname, droles, pa }]) => ({
-      abilities: [],
-      attack: dac.toLowerCase(),
-      attributes: {
-        agility: {
-          base: attribs.agi.b,
-          gain: Number(attribs.agi.g)
-        },
-        armor: attribs.armor,
-        damage: {
-          max: attribs.dmg.max,
-          min: attribs.dmg.min
-        },
-        intelligence: {
-          base: attribs.int.b,
-          gain: Number(attribs.int.g)
-        },
-        primary: attribute(pa),
-        speed: attribs.ms,
-        strength: {
-          base: attribs.str.b,
-          gain: Number(attribs.str.g)
-        }
-      },
-      hype: Tokens[`npc_dota_hero_${slug}_hype`],
-      image: `${slug}_full.png`,
-      lore: Tokens[`npc_dota_hero_${slug}_bio`],
-      name: dname,
-      portrait: `${slug}_vert.jpg`,
-      roles: droles.split(' - '),
-      slug
-    })
-  )
-
-  const abilities: Ability[] = Object.entries(abilitydata).map(
-    ([
-      slug,
-      { affects, attrib, cmb, desc, dmg, dname, hurl, lore, notes }
-    ]) => ({
-      ...abilityCooldownAndManaCost(cmb),
-      affects: abilityAffects(affects),
-      attributes: abilityAffects(attrib),
-      damage: abilityAffects(dmg),
-      description: cleanHtml(desc),
-      hero: hurl,
-      image: slug.indexOf('special') === 0 ? null : `${slug}_hp1.png`,
-      lore: cleanHtml(lore),
-      name: dname,
-      notes: cleanHtml(notes),
-      slug
-    })
-  )
-
-  heroes.forEach((hero) => {
-    hero.abilities = abilities
-      .filter((ability) => ability.slug.indexOf(hero.slug) === 0)
-      .map((ability) => ability.slug)
-  })
 
   const heroesIndex = algolia.initIndex('heroes')
 
@@ -156,7 +227,6 @@ const main = async (): Promise<void> => {
   await abilitiesIndex.saveObjects(
     abilities.map((ability) => ({
       ...ability,
-      hasImage: !!ability.image,
       objectID: ability.slug
     }))
   )

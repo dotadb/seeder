@@ -1,123 +1,97 @@
-// dota
-
-export type DotaAbility = {
-  affects: string
-  attrib: string
-  cmb: string
-  desc: string
-  dmg: string
-  dname: string
-  hurl: string
-  lore: string
-  notes: string
+export type Image = {
+  path: string
+  url: string
 }
-
-export type DotaHero = {
-  attribs: {
-    agi: {
-      b: number
-      g: string
-    }
-    armor: number
-    dmg: {
-      min: number
-      max: number
-    }
-    int: {
-      b: number
-      g: string
-    }
-    ms: number
-    str: {
-      b: number
-      g: string
-    }
-  }
-  dac: string
-  dname: string
-  droles: string
-  pa: string
-  u: string
-}
-
-export type DotaItem = {
-  attrib: string
-  cd: number
-  components: (string | false)[]
-  cost: number
-  created: boolean
-  desc: string
-  dname: string
-  id: number
-  img: string
-  lore: string
-  mc: string | number | false
-  notes: string
-  qual: string | false
-}
-
-// db
 
 export type Ability = {
-  affects: string[]
-  attributes: string[]
-  cooldown: number[]
-  damage: string[]
-  description: string
-  hero: string
-  image: string | null
-  lore: string
-  manacost: number[]
+  attributes?: {
+    label: string
+    value: string | string[]
+  }[]
+  behavior?: string | string[]
+  cooldown?: string | string[]
+  damage?: string
+  damageType?: string
+  description?: string
+  image?: string
+  manacost?: string | string[]
   name: string
-  notes: string
+  piercesThroughBkb?: boolean
   slug: string
 }
 
 export type Hero = {
-  abilities: string[]
-  attack: string
-  attributes: HeroAttributes
-  hype: string
-  image: string
-  lore: string
+  abilities: Ability[]
+  attribubtes: {
+    agi: {
+      base: number
+      gain: number
+    }
+    int: {
+      base: number
+      gain: number
+    }
+    primary: string
+    str: {
+      base: number
+      gain: number
+    }
+  }
+  icon?: string
+  image?: string
   name: string
-  portrait: string
   roles: string[]
   slug: string
-}
-
-export type HeroAttributes = {
-  agility: HeroAttribute
-  armor: number
-  damage: HeroDamage
-  intelligence: HeroAttribute
-  primary: string
-  speed: number
-  strength: HeroAttribute
-}
-
-export type HeroAttribute = {
-  base: number
-  gain: number
-}
-
-export type HeroDamage = {
-  max: number
-  min: number
+  stats: {
+    armor: {
+      base: number
+      magicResistence: number
+    }
+    attack: {
+      max: number
+      min: number
+      projectileSpeed: number
+      range: number
+      rate: number
+      type: string
+    }
+    health: {
+      base: number
+      regen: number
+    }
+    mana: {
+      base: number
+      regen: number
+    }
+    movement: {
+      legs: number
+      speed: number
+      turnRate: number
+    }
+  }
+  talents: {
+    name: string
+    level: number
+  }[]
 }
 
 export type Item = {
-  attributes: string[]
-  components: string[]
-  cooldown: number
+  attributes: {
+    header: string
+    label: string
+    value: string | string[]
+  }[]
+  charges: number | false
+  components: null | string[]
+  cooldown: number | false
   cost: number
-  crafted: boolean
-  description: string
-  image: string
+  created: boolean
+  hint?: string[]
+  image?: string
   lore: string
-  manacost: number[]
+  manacost: number | false
   name: string
   notes: string
-  quality: string | null
+  quality?: string
   slug: string
 }
